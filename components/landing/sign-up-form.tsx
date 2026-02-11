@@ -13,6 +13,7 @@ export function SignUpForm() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,6 +43,11 @@ export function SignUpForm() {
         return;
       }
 
+      setSuccessMessage(
+        data.duplicate
+          ? data.message
+          : "You\u2019re on the list!",
+      );
       setStatus("success");
     } catch {
       setErrorMessage("Something went wrong. Please try again.");
@@ -61,7 +67,7 @@ export function SignUpForm() {
           >
             <CheckCircle2 className="size-4 text-[var(--octo-teal)]" />
             <span className="text-sm font-medium">
-              You&apos;re on the list!
+              {successMessage}
             </span>
           </motion.div>
         ) : (
