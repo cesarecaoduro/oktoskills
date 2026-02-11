@@ -8,13 +8,17 @@
  * @module
  */
 
+import type * as betaSignups from "../betaSignups.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  betaSignups: typeof betaSignups;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
