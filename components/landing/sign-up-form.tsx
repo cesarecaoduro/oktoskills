@@ -45,7 +45,7 @@ export function SignUpForm() {
 
       setSuccessMessage(
         data.duplicate
-          ? data.message
+          ? (data.message ?? "Hey, we\u2019ve got you covered already \u2014 sit tight!")
           : "You\u2019re on the list!",
       );
       setStatus("success");

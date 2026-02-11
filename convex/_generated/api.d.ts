@@ -9,6 +9,7 @@
  */
 
 import type * as betaSignups from "../betaSignups.js";
+import type * as emailEvents from "../emailEvents.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +19,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   betaSignups: typeof betaSignups;
+  emailEvents: typeof emailEvents;
 }>;
 
 /**
