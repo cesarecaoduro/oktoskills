@@ -24,8 +24,11 @@ export async function POST(request: Request) {
     const { status } = await fetchMutation(api.betaSignups.insert, { email });
 
     if (status === "duplicate") {
-      // Already signed up — return success without sending emails again
-      return NextResponse.json({ success: true, duplicate: true });
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        message: "Hey, we've got you covered already — sit tight!",
+      });
     }
 
     // Send welcome email to user
