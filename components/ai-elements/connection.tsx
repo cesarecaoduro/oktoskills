@@ -1,8 +1,9 @@
 import type { ConnectionLineComponent } from "@xyflow/react";
+import { memo } from "react";
 
 const HALF = 0.5;
 
-export const Connection: ConnectionLineComponent = ({
+const ConnectionComponent: ConnectionLineComponent = ({
   fromX,
   fromY,
   toX,
@@ -26,3 +27,12 @@ export const Connection: ConnectionLineComponent = ({
     />
   </g>
 );
+
+export const Connection = memo(ConnectionComponent, (prev, next) => {
+  return (
+    prev.fromX === next.fromX &&
+    prev.fromY === next.fromY &&
+    prev.toX === next.toX &&
+    prev.toY === next.toY
+  );
+}) as ConnectionLineComponent;

@@ -1,12 +1,15 @@
 import type { EdgeProps, InternalNode, Node } from "@xyflow/react";
 
+import { memo, useMemo, useState } from "react";
 import {
   BaseEdge,
   getBezierPath,
   getSimpleBezierPath,
+  getSmoothStepPath,
   Position,
   useInternalNode,
 } from "@xyflow/react";
+import { cn } from "@/lib/utils";
 
 const Temporary = ({
   id,
@@ -106,39 +109,103 @@ const getEdgeParams = (
   };
 };
 
-const Animated = ({ id, source, target, markerEnd, style }: EdgeProps) => {
+const Animated = memo(function Animated({ id, source, target, markerEnd, style, data }: EdgeProps) {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const edgeParams = useMemo(() => {
+    if (!(sourceNode && targetNode)) return null;
+    return getEdgeParams(sourceNode, targetNode);
+  }, [sourceNode, targetNode]);
+
+  const edgePath = useMemo(() => {
+    if (!edgeParams) return "";
+    const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams;
+    const [path] = getBezierPath({
+      sourcePosition: sourcePos,
+      sourceX: sx,
+      sourceY: sy,
+      targetPosition: targetPos,
+      targetX: tx,
+      targetY: ty,
+    });
+    return path;
+  }, [edgeParams]);
 
   if (!(sourceNode && targetNode)) {
     return null;
   }
 
-  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(
-    sourceNode,
-    targetNode
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        markerEnd={markerEnd}
+        path={edgePath}
+        style={style}
+        className={cn(isHovered && "stroke-2")}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      />
+      {data?.animated === true && (
+        <circle fill="var(--primary)" r="4">
+          <animateMotion dur="3s" path={edgePath} repeatCount="indefinite" />
+        </circle>
+      )}
+    </>
   );
+});
 
-  const [edgePath] = getBezierPath({
-    sourcePosition: sourcePos,
-    sourceX: sx,
-    sourceY: sy,
-    targetPosition: targetPos,
-    targetX: tx,
-    targetY: ty,
-  });
+const SmoothStep = memo(function SmoothStep({ id, source, target, markerEnd, style, data }: EdgeProps) {
+  const sourceNode = useInternalNode(source);
+  const targetNode = useInternalNode(target);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const edgeParams = useMemo(() => {
+    if (!(sourceNode && targetNode)) return null;
+    return getEdgeParams(sourceNode, targetNode);
+  }, [sourceNode, targetNode]);
+
+  const edgePath = useMemo(() => {
+    if (!edgeParams) return "";
+    const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams;
+    const [path] = getSmoothStepPath({
+      sourceX: sx,
+      sourceY: sy,
+      targetX: tx,
+      targetY: ty,
+      sourcePosition: sourcePos,
+      targetPosition: targetPos,
+      borderRadius: 8,
+    });
+    return path;
+  }, [edgeParams]);
+
+  if (!(sourceNode && targetNode)) return null;
 
   return (
     <>
-      <BaseEdge id={id} markerEnd={markerEnd} path={edgePath} style={style} />
-      <circle fill="var(--primary)" r="4">
-        <animateMotion dur="2s" path={edgePath} repeatCount="indefinite" />
-      </circle>
+      <BaseEdge
+        id={id}
+        markerEnd={markerEnd}
+        path={edgePath}
+        style={style}
+        className={cn(isHovered && "stroke-2")}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      />
+      {data?.animated === true && (
+        <circle fill="var(--primary)" r="4">
+          <animateMotion dur="3s" path={edgePath} repeatCount="indefinite" />
+        </circle>
+      )}
     </>
   );
-};
+});
 
 export const Edge = {
   Animated,
+  SmoothStep,
   Temporary,
 };

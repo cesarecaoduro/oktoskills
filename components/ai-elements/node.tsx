@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, CSSProperties } from "react";
 
 import {
   Card,
@@ -17,27 +17,45 @@ export type NodeProps = ComponentProps<typeof Card> & {
     target: boolean;
     source: boolean;
   };
+  nodeType?: string;
+  selected?: boolean;
+  accentColor?: string;
 };
 
-export const Node = ({ handles, className, ...props }: NodeProps) => (
-  <Card
-    className={cn(
-      "node-container relative size-full h-auto w-sm gap-0 rounded-md p-0",
-      className
-    )}
-    {...props}
-  >
-    {handles.target && <Handle position={Position.Left} type="target" />}
-    {handles.source && <Handle position={Position.Right} type="source" />}
-    {props.children}
-  </Card>
-);
+export const Node = ({
+  handles,
+  className,
+  selected,
+  accentColor,
+  style,
+  ...props
+}: NodeProps) => {
+  const selectedStyle: CSSProperties = selected && accentColor
+    ? { borderColor: accentColor, borderWidth: 2, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }
+    : {};
+
+  return (
+    <Card
+      className={cn(
+        "node-container relative min-w-[180px] max-w-[240px] rounded-lg bg-card border p-0 gap-0 shadow-sm",
+        "transition-shadow duration-150",
+        className
+      )}
+      style={{ ...style, ...selectedStyle }}
+      {...props}
+    >
+      {handles.target && <Handle position={Position.Left} type="target" />}
+      {handles.source && <Handle position={Position.Right} type="source" />}
+      {props.children}
+    </Card>
+  );
+};
 
 export type NodeHeaderProps = ComponentProps<typeof CardHeader>;
 
 export const NodeHeader = ({ className, ...props }: NodeHeaderProps) => (
   <CardHeader
-    className={cn("gap-0.5 rounded-t-md border-b bg-secondary p-3!", className)}
+    className={cn("gap-0.5 rounded-t-lg border-b border-border/50 p-3! bg-card", className)}
     {...props}
   />
 );
@@ -66,7 +84,7 @@ export type NodeFooterProps = ComponentProps<typeof CardFooter>;
 
 export const NodeFooter = ({ className, ...props }: NodeFooterProps) => (
   <CardFooter
-    className={cn("rounded-b-md border-t bg-secondary p-3!", className)}
+    className={cn("rounded-b-lg border-t bg-secondary p-3!", className)}
     {...props}
   />
 );
