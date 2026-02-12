@@ -19,7 +19,9 @@ import { DocumentNodeComponent } from "@/components/editor/nodes/document-node";
 import { LLMNodeComponent } from "@/components/editor/nodes/llm-node";
 import { ModelNodeComponent } from "@/components/editor/nodes/model-node";
 import { TextInputNodeComponent } from "@/components/editor/nodes/text-input-node";
+import { ConditionNodeComponent } from "@/components/editor/nodes/condition-node";
 import { TextOutputNodeComponent } from "@/components/editor/nodes/text-output-node";
+import { ToolNodeComponent } from "@/components/editor/nodes/tool-node";
 import { EditorToolbar } from "@/components/editor/toolbar";
 import { NavSidebar } from "@/components/nav-sidebar";
 import { defaultNodeData } from "@/lib/flow/node-defaults";
@@ -50,6 +52,8 @@ const nodeTypes = {
   document: DocumentNodeComponent,
   agent: AgentNodeComponent,
   llm: LLMNodeComponent,
+  condition: ConditionNodeComponent,
+  tool: ToolNodeComponent,
 };
 
 const edgeTypes = {

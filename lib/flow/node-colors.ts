@@ -5,6 +5,8 @@ export const NODE_COLORS = {
   document:   { accent: "var(--editor-node-text)" },     // Blue (same as text)
   agent:      { accent: "var(--editor-node-agent)" },    // Purple
   llm:        { accent: "var(--editor-node-llm)" },      // Amber
+  condition:  { accent: "var(--editor-node-condition)" }, // Amber/Orange
+  tool:       { accent: "var(--editor-node-tool)" },      // Orange
 } as const;
 
 export type NodeColorKey = keyof typeof NODE_COLORS;

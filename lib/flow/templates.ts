@@ -49,7 +49,7 @@ export const flowTemplates: FlowTemplate[] = [
         id: "t-output",
         type: "textOutput",
         position: { x: 650, y: 80 },
-        data: { label: "Output", text: "" },
+        data: { label: "Output", text: "", outputFormat: "markdown" },
       },
     ],
     edges: [
@@ -91,7 +91,7 @@ export const flowTemplates: FlowTemplate[] = [
         id: "t-output",
         type: "textOutput",
         position: { x: 700, y: 100 },
-        data: { label: "Response", text: "" },
+        data: { label: "Response", text: "", outputFormat: "markdown" },
       },
     ],
     edges: [

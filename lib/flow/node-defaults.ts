@@ -1,5 +1,5 @@
 import type { AppNode } from "@/lib/flow/types";
-import { Bot, Brain, FileOutput, FileText, Sparkles, Type } from "lucide-react";
+import { Bot, Brain, FileOutput, FileText, GitBranch, Sparkles, Type, Wrench } from "lucide-react";
 
 export const paletteItems = [
   { type: "textInput", label: "Text", icon: Type },
@@ -7,6 +7,8 @@ export const paletteItems = [
   { type: "model", label: "Model", icon: Brain },
   { type: "llm", label: "LLM", icon: Sparkles },
   { type: "agent", label: "Agent", icon: Bot },
+  { type: "condition", label: "Condition", icon: GitBranch },
+  { type: "tool", label: "Tool", icon: Wrench },
   { type: "textOutput", label: "Output", icon: FileOutput },
 ] as const;
 
@@ -35,17 +37,31 @@ export const nodeCategories: NodeCategoryGroup[] = [
     ],
   },
   {
+    id: "logic",
+    label: "Logic",
+    items: [
+      paletteItems[5], // Condition
+    ],
+  },
+  {
+    id: "tools",
+    label: "Tools",
+    items: [
+      paletteItems[6], // Tool
+    ],
+  },
+  {
     id: "outputs",
     label: "Outputs",
     items: [
-      paletteItems[5], // Output
+      paletteItems[7], // Output
     ],
   },
 ];
 
 export const defaultNodeData: Record<string, Record<string, unknown>> = {
   textInput: { label: "Text Input", text: "" },
-  textOutput: { label: "Text Output", text: "" },
+  textOutput: { label: "Text Output", text: "", outputFormat: "markdown" },
   model: { label: "Model", modelId: "", temperature: 0.7, maxTokens: 1024 },
   document: { label: "Document", content: "", files: [] },
   llm: {
@@ -59,5 +75,17 @@ export const defaultNodeData: Record<string, Record<string, unknown>> = {
     label: "Agent",
     webSearchEnabled: false,
     contextNodes: [],
+  },
+  condition: {
+    label: "Condition",
+    description: "",
+    conditionType: "if-else",
+    expression: "",
+  },
+  tool: {
+    label: "Tool",
+    description: "",
+    toolType: "api-call",
+    config: {},
   },
 };

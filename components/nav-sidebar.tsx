@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Collapsible,
   CollapsibleContent,
@@ -27,6 +27,7 @@ import { useFlowEditorStore } from "@/lib/flow/store";
 import { NODE_COLORS, type NodeColorKey } from "@/lib/flow/node-colors";
 import { nodeCategories } from "@/lib/flow/node-defaults";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 import {
   ChevronRight,
   ChevronsUpDown,
@@ -34,6 +35,7 @@ import {
   Home,
   Keyboard,
   LogIn,
+  LogOut,
   Monitor,
   Moon,
   PenTool,
@@ -43,7 +45,7 @@ import {
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const menuItems = [
   { href: "/", label: "Home", icon: Home },
@@ -52,11 +54,18 @@ const menuItems = [
 
 export function NavSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { setTheme } = useTheme();
+  const { data: session } = authClient.useSession();
   const setShortcutsDialogOpen = useFlowEditorStore(
     (s) => (s as any).setShortcutsDialogOpen,
   );
   const isEditor = pathname.startsWith("/editor");
+
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    router.push("/");
+  };
 
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData("application/octoskills-node", nodeType);
@@ -158,15 +167,25 @@ export function NavSidebar() {
         <DropdownMenuTrigger asChild>
           <button className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-accent/50 transition-colors">
             <Avatar size="sm">
-              <AvatarFallback>U</AvatarFallback>
+              {session?.user?.image && (
+                <AvatarImage src={session.user.image} alt={session.user.name ?? ""} />
+              )}
+              <AvatarFallback>
+                {session?.user?.name?.[0]?.toUpperCase() ?? "U"}
+              </AvatarFallback>
             </Avatar>
-            <span className="flex-1 text-xs font-medium text-muted-foreground">
-              User
+            <span className="flex-1 truncate text-xs font-medium text-muted-foreground">
+              {session?.user?.name ?? session?.user?.email ?? "Guest"}
             </span>
             <ChevronsUpDown className="size-3 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="start" className="w-48">
+          {session?.user && (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">
+              {session.user.email}
+            </div>
+          )}
           <DropdownMenuItem disabled>
             <Settings className="mr-2 size-4" />
             Settings
@@ -199,10 +218,19 @@ export function NavSidebar() {
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
-          <DropdownMenuItem disabled>
-            <LogIn className="mr-2 size-4" />
-            Sign in
-          </DropdownMenuItem>
+          {session?.user ? (
+            <DropdownMenuItem onSelect={handleSignOut}>
+              <LogOut className="mr-2 size-4" />
+              Sign out
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem asChild>
+              <Link href="/sign-in">
+                <LogIn className="mr-2 size-4" />
+                Sign in
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

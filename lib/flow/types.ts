@@ -8,6 +8,7 @@ export type TextInputNodeData = {
 export type TextOutputNodeData = {
   label: string;
   text: string;
+  outputFormat: "markdown" | "json" | "file";
 };
 
 export type ModelNodeData = {
@@ -54,6 +55,20 @@ export type LLMNodeData = {
   maxTokens: number;
 };
 
+export type ConditionNodeData = {
+  label: string;
+  description: string;
+  conditionType: "if-else" | "switch" | "loop";
+  expression: string;
+};
+
+export type ToolNodeData = {
+  label: string;
+  description: string;
+  toolType: "api-call" | "function" | "database-query" | "web-search";
+  config: Record<string, string>;
+};
+
 export type EdgeVariant = "animated" | "smoothStep";
 
 export type TextInputNode = Node<TextInputNodeData, "textInput">;
@@ -62,6 +77,8 @@ export type ModelNode = Node<ModelNodeData, "model">;
 export type DocumentNode = Node<DocumentNodeData, "document">;
 export type AgentNode = Node<AgentNodeData, "agent">;
 export type LLMNode = Node<LLMNodeData, "llm">;
+export type ConditionNode = Node<ConditionNodeData, "condition">;
+export type ToolNode = Node<ToolNodeData, "tool">;
 
 export type AppNode =
   | TextInputNode
@@ -69,7 +86,9 @@ export type AppNode =
   | ModelNode
   | DocumentNode
   | AgentNode
-  | LLMNode;
+  | LLMNode
+  | ConditionNode
+  | ToolNode;
 
 export type AppEdge = Edge;
 

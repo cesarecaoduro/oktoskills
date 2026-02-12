@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { NODE_COLORS } from "@/lib/flow/node-colors";
 import { useReactFlow } from "@xyflow/react";
-import { Send, Trash2 } from "lucide-react";
+import { FileDown, Send, Trash2 } from "lucide-react";
 
 function TextOutputNodeComponentInner({
   id,
@@ -44,10 +44,31 @@ function TextOutputNodeComponentInner({
           </Button>
         </NodeAction>
       </NodeHeader>
-      <NodeContent className="p-3">
-        <div className="min-h-16 rounded-md border bg-muted/50 p-2.5 text-xs text-muted-foreground">
-          {data.text || "Output will appear here..."}
+      <NodeContent className="p-3 space-y-2">
+        {/* Format row */}
+        <div className="flex items-center gap-2 text-xs">
+          <FileDown className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="text-muted-foreground">Format</span>
+          <span className="ml-auto font-medium capitalize">
+            {data.outputFormat || "markdown"}
+          </span>
         </div>
+
+        {/* Format-aware output preview */}
+        {data.outputFormat === "json" ? (
+          <div className="min-h-16 overflow-auto rounded-md border bg-muted/50 p-2.5 font-mono text-[11px] text-muted-foreground whitespace-pre">
+            {data.text || "{ }"}
+          </div>
+        ) : data.outputFormat === "file" ? (
+          <div className="flex min-h-16 items-center gap-2 rounded-md border bg-muted/50 p-2.5 text-xs text-muted-foreground">
+            <FileDown className="size-4 shrink-0" />
+            <span>{data.text ? "File ready" : "No file output yet"}</span>
+          </div>
+        ) : (
+          <div className="min-h-16 rounded-md border bg-muted/50 p-2.5 text-xs text-muted-foreground">
+            {data.text || "Output will appear here..."}
+          </div>
+        )}
       </NodeContent>
     </Node>
   );

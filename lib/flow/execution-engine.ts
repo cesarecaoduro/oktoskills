@@ -230,6 +230,16 @@ export async function executeFlow(
           log.output = "Agent execution not yet supported";
           break;
         }
+
+        case "condition": {
+          log.output = "Condition evaluation not yet supported";
+          break;
+        }
+
+        case "tool": {
+          log.output = "Tool execution not yet supported";
+          break;
+        }
       }
 
       log.status = "completed";

@@ -1,12 +1,13 @@
 "use client";
 
-import type { AppNode, FileAttachment, DocumentNodeData, AgentNodeData, ModelNodeData, LLMNodeData, TextOutputNodeData } from "@/lib/flow/types";
+import type { AppNode, FileAttachment, DocumentNodeData, AgentNodeData, ModelNodeData, LLMNodeData, TextOutputNodeData, ConditionNodeData, ToolNodeData } from "@/lib/flow/types";
 import { NODE_COLORS, type NodeColorKey } from "@/lib/flow/node-colors";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { TextInputNodeData } from "@/lib/flow/types";
 import { useReactFlow, useOnSelectionChange, useNodesData } from "@xyflow/react";
@@ -16,8 +17,10 @@ import {
   CheckCircle2,
   FileOutput,
   FileText,
+  GitBranch,
   Sparkles,
   Type,
+  Wrench,
   X,
   Upload,
   Trash2,
@@ -37,6 +40,8 @@ const nodeIcons: Record<string, typeof Type> = {
   document: FileText,
   agent: Bot,
   llm: Sparkles,
+  condition: GitBranch,
+  tool: Wrench,
 };
 
 const nodelabels: Record<string, string> = {
@@ -46,6 +51,8 @@ const nodelabels: Record<string, string> = {
   document: "Document Properties",
   agent: "Agent Properties",
   llm: "LLM Properties",
+  condition: "Condition Properties",
+  tool: "Tool Properties",
 };
 
 function formatFileSize(bytes: number): string {
@@ -526,15 +533,133 @@ export function ConfigPanel() {
           />
         )}
 
-        {selectedNode.type === "textOutput" && (selectedNode.data as TextOutputNodeData).text && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
-              Output
-            </label>
-            <div className="max-h-64 overflow-y-auto rounded border bg-muted/30 p-3">
-              <MessageResponse className="text-xs">
-                {(selectedNode.data as TextOutputNodeData).text}
-              </MessageResponse>
+        {selectedNode.type === "textOutput" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Output Format
+              </label>
+              <Select
+                value={(selectedNode.data as TextOutputNodeData).outputFormat || "markdown"}
+                onValueChange={(value) =>
+                  updateNodeData(selectedNode.id, { outputFormat: value })
+                }
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="markdown">Markdown</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="file">File (Stream)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(selectedNode.data as TextOutputNodeData).text && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Output
+                </label>
+                <div className="max-h-64 overflow-y-auto rounded border bg-muted/30 p-3">
+                  <MessageResponse className="text-xs">
+                    {(selectedNode.data as TextOutputNodeData).text}
+                  </MessageResponse>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selectedNode.type === "condition" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Description
+              </label>
+              <Textarea
+                value={(selectedNode.data as ConditionNodeData).description || ""}
+                onChange={(e) =>
+                  updateNodeData(selectedNode.id, { description: e.target.value })
+                }
+                className="min-h-16 resize-none text-sm"
+                placeholder="Describe the condition logic..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Condition Type
+              </label>
+              <Select
+                value={(selectedNode.data as ConditionNodeData).conditionType || "if-else"}
+                onValueChange={(value) =>
+                  updateNodeData(selectedNode.id, { conditionType: value })
+                }
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="if-else">If / Else</SelectItem>
+                  <SelectItem value="switch">Switch</SelectItem>
+                  <SelectItem value="loop">Loop</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Expression
+              </label>
+              <Input
+                value={(selectedNode.data as ConditionNodeData).expression || ""}
+                onChange={(e) =>
+                  updateNodeData(selectedNode.id, { expression: e.target.value })
+                }
+                className="h-8 font-mono text-sm"
+                placeholder="e.g. output.score > 0.8"
+              />
+            </div>
+          </div>
+        )}
+
+        {selectedNode.type === "tool" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Description
+              </label>
+              <Textarea
+                value={(selectedNode.data as ToolNodeData).description || ""}
+                onChange={(e) =>
+                  updateNodeData(selectedNode.id, { description: e.target.value })
+                }
+                className="min-h-16 resize-none text-sm"
+                placeholder="Describe what this tool does..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Tool Type
+              </label>
+              <Select
+                value={(selectedNode.data as ToolNodeData).toolType || "api-call"}
+                onValueChange={(value) =>
+                  updateNodeData(selectedNode.id, { toolType: value })
+                }
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="api-call">API Call</SelectItem>
+                  <SelectItem value="function">Function</SelectItem>
+                  <SelectItem value="database-query">Database Query</SelectItem>
+                  <SelectItem value="web-search">Web Search</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         )}
