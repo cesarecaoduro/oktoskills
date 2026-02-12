@@ -25,8 +25,9 @@ export const Canvas = ({ children, ...props }: CanvasProps) => {
   return (
     <ReactFlow
       deleteKeyCode={deleteKeyCode}
-      panOnDrag={isTouch ? [1, 2] : false}
-      panOnScroll={!isTouch}
+      panOnDrag={isTouch ? [1, 2] : [1]}
+      panOnScroll={false}
+      zoomOnScroll={!isTouch}
       selectionOnDrag={!isTouch}
       zoomOnPinch={isTouch}
       zoomOnDoubleClick={false}

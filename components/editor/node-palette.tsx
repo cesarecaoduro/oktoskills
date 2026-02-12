@@ -2,6 +2,7 @@
 
 import type { AppNode } from "@/lib/flow/types";
 import { NODE_COLORS, type NodeColorKey } from "@/lib/flow/node-colors";
+import { paletteItems, defaultNodeData } from "@/lib/flow/node-defaults";
 
 import { Panel } from "@/components/ai-elements/panel";
 import { Button } from "@/components/ui/button";
@@ -12,34 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useReactFlow } from "@xyflow/react";
-import {
-  Bot,
-  Brain,
-  FileOutput,
-  FileText,
-  Type,
-} from "lucide-react";
 import { nanoid } from "nanoid";
-
-const paletteItems = [
-  { type: "textInput", label: "Text", icon: Type },
-  { type: "document", label: "Document", icon: FileText },
-  { type: "model", label: "Model", icon: Brain },
-  { type: "agent", label: "Agent", icon: Bot },
-  { type: "textOutput", label: "Output", icon: FileOutput },
-] as const;
-
-const defaultNodeData: Record<string, Record<string, unknown>> = {
-  textInput: { label: "Text Input", text: "" },
-  textOutput: { label: "Text Output", text: "" },
-  model: { label: "Model", modelId: "", temperature: 0.7, maxTokens: 1024 },
-  document: { label: "Document", content: "", files: [] },
-  agent: {
-    label: "Agent",
-    webSearchEnabled: false,
-    contextNodes: [],
-  },
-};
 
 export function NodePalette() {
   const { addNodes, screenToFlowPosition } = useReactFlow();
@@ -58,6 +32,11 @@ export function NodePalette() {
     });
   };
 
+  const onDragStart = (event: React.DragEvent, nodeType: string) => {
+    event.dataTransfer.setData("application/octoskills-node", nodeType);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
   return (
     <Panel position="bottom-center" className="flex items-center gap-2 p-2">
       <TooltipProvider>
@@ -68,6 +47,8 @@ export function NodePalette() {
                 variant="outline"
                 size="sm"
                 onClick={() => addNode(item.type)}
+                draggable
+                onDragStart={(e) => onDragStart(e, item.type)}
               >
                 <span
                   className="inline-block size-2 rounded-full"

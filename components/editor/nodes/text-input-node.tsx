@@ -3,7 +3,7 @@
 import type { NodeProps } from "@xyflow/react";
 import type { TextInputNode } from "@/lib/flow/types";
 
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import {
   Node,
   NodeAction,
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NODE_COLORS } from "@/lib/flow/node-colors";
 import { useReactFlow } from "@xyflow/react";
 import { Trash2, Type } from "lucide-react";
+import { useFlowExecution } from "@/lib/flow/execution-context";
 
 function TextInputNodeComponentInner({
   id,
@@ -23,6 +24,18 @@ function TextInputNodeComponentInner({
   selected,
 }: NodeProps<TextInputNode>) {
   const { updateNodeData, deleteElements } = useReactFlow();
+  const { executeFromNode } = useFlowExecution();
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        executeFromNode(id);
+      }
+    },
+    [executeFromNode, id],
+  );
 
   return (
     <Node
@@ -51,6 +64,7 @@ function TextInputNodeComponentInner({
           placeholder="Enter text..."
           value={data.text}
           onChange={(e) => updateNodeData(id, { text: e.target.value })}
+          onKeyDown={handleKeyDown}
         />
       </NodeContent>
     </Node>

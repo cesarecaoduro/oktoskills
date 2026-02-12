@@ -56,7 +56,7 @@ const fadeUp = {
 
 export default function Home() {
   return (
-    <main className="relative isolate h-screen overflow-hidden">
+    <main className="dark relative isolate h-screen overflow-hidden bg-[var(--octo-deep)] text-white">
       {/* Full-screen animated background (orbs + noise + vignette) */}
       <BubbleBackground />
 

@@ -46,6 +46,14 @@ export type AgentNodeData = {
   contextNodes: string[]; // tracked from incoming edges
 };
 
+export type LLMNodeData = {
+  label: string;
+  systemPrompt: string;
+  modelId: string;
+  temperature: number;
+  maxTokens: number;
+};
+
 export type EdgeVariant = "animated" | "smoothStep";
 
 export type TextInputNode = Node<TextInputNodeData, "textInput">;
@@ -53,13 +61,15 @@ export type TextOutputNode = Node<TextOutputNodeData, "textOutput">;
 export type ModelNode = Node<ModelNodeData, "model">;
 export type DocumentNode = Node<DocumentNodeData, "document">;
 export type AgentNode = Node<AgentNodeData, "agent">;
+export type LLMNode = Node<LLMNodeData, "llm">;
 
 export type AppNode =
   | TextInputNode
   | TextOutputNode
   | ModelNode
   | DocumentNode
-  | AgentNode;
+  | AgentNode
+  | LLMNode;
 
 export type AppEdge = Edge;
 

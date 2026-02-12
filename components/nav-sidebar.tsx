@@ -1,6 +1,21 @@
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -8,8 +23,24 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useFlowEditorStore } from "@/lib/flow/store";
+import { NODE_COLORS, type NodeColorKey } from "@/lib/flow/node-colors";
+import { nodeCategories } from "@/lib/flow/node-defaults";
 import { cn } from "@/lib/utils";
-import { BarChart3, BookOpen, Home, PenTool, Sparkles } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronsUpDown,
+  GripVertical,
+  Home,
+  Keyboard,
+  LogIn,
+  Monitor,
+  Moon,
+  PenTool,
+  Settings,
+  Sun,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,16 +48,23 @@ import { usePathname } from "next/navigation";
 const menuItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/editor", label: "Editor", icon: PenTool },
-  { href: "#", label: "Analytics", icon: BarChart3 },
-  { href: "#", label: "Skills", icon: Sparkles },
-  { href: "#", label: "Docs", icon: BookOpen },
 ];
 
 export function NavSidebar() {
   const pathname = usePathname();
+  const { setTheme } = useTheme();
+  const setShortcutsDialogOpen = useFlowEditorStore(
+    (s) => (s as any).setShortcutsDialogOpen,
+  );
+  const isEditor = pathname.startsWith("/editor");
+
+  const onDragStart = (event: React.DragEvent, nodeType: string) => {
+    event.dataTransfer.setData("application/octoskills-node", nodeType);
+    event.dataTransfer.effectAllowed = "move";
+  };
 
   return (
-    <div className="flex w-[180px] flex-col border-r bg-card">
+    <div className="flex w-[200px] flex-col border-r bg-card">
       <div className="flex items-center gap-2 px-3 py-3">
         <Image
           src="/images/logo-mascot.png"
@@ -42,7 +80,7 @@ export function NavSidebar() {
         />
       </div>
       <Separator />
-      <nav className="flex flex-1 flex-col gap-0.5 p-2">
+      <nav className="flex flex-col gap-0.5 p-2">
         <TooltipProvider>
           {menuItems.map((item) => {
             const isActive =
@@ -71,13 +109,102 @@ export function NavSidebar() {
           })}
         </TooltipProvider>
       </nav>
+
+      {isEditor && (
+        <>
+          <Separator />
+          <div className="flex-1 overflow-y-auto p-2">
+            <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Nodes
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {nodeCategories.map((category) => (
+                <Collapsible key={category.id} defaultOpen>
+                  <CollapsibleTrigger className="flex w-full items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors group">
+                    <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90" />
+                    {category.label}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="flex flex-col gap-0.5 pl-2">
+                      {category.items.map((item) => (
+                        <div
+                          key={item.type}
+                          draggable
+                          onDragStart={(e) => onDragStart(e, item.type)}
+                          className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors cursor-grab active:cursor-grabbing"
+                        >
+                          <GripVertical className="size-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                          <span
+                            className="inline-block size-2 rounded-full shrink-0"
+                            style={{ backgroundColor: NODE_COLORS[item.type as NodeColorKey]?.accent }}
+                          />
+                          <item.icon className="size-3.5 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {!isEditor && <div className="flex-1" />}
+
       <Separator />
-      <div className="flex items-center gap-2 px-4 py-3">
-        <Avatar size="sm">
-          <AvatarFallback>U</AvatarFallback>
-        </Avatar>
-        <span className="text-xs font-medium text-muted-foreground">User</span>
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-accent/50 transition-colors">
+            <Avatar size="sm">
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+            <span className="flex-1 text-xs font-medium text-muted-foreground">
+              User
+            </span>
+            <ChevronsUpDown className="size-3 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="start" className="w-48">
+          <DropdownMenuItem disabled>
+            <Settings className="mr-2 size-4" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setShortcutsDialogOpen?.(true)}
+          >
+            <Keyboard className="mr-2 size-4" />
+            Keyboard Shortcuts
+            <span className="ml-auto text-xs text-muted-foreground">?</span>
+          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Sun className="mr-2 size-4" />
+              Theme
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onSelect={() => setTheme("light")}>
+                <Sun className="mr-2 size-4" />
+                Light
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setTheme("dark")}>
+                <Moon className="mr-2 size-4" />
+                Dark
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setTheme("system")}>
+                <Monitor className="mr-2 size-4" />
+                System
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem disabled>
+            <LogIn className="mr-2 size-4" />
+            Sign in
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

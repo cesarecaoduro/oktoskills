@@ -31,10 +31,10 @@ export function ModelSelectorDialog({
     useFlowEditorStore();
 
   useEffect(() => {
-    if (open && models.length === 0 && !modelsLoading && !modelsError) {
+    if (models.length === 0 && !modelsLoading && !modelsError) {
       fetchModels();
     }
-  }, [open, models.length, modelsLoading, modelsError, fetchModels]);
+  }, [models.length, modelsLoading, modelsError, fetchModels]);
 
   const selectedModel = getModelById(value);
 
@@ -65,6 +65,8 @@ export function ModelSelectorDialog({
               <ModelSelectorLogo provider={selectedModel.provider} />
               <span className="truncate">{selectedModel.name}</span>
             </div>
+          ) : value ? (
+            <span className="truncate">{value}</span>
           ) : (
             <span className="text-muted-foreground">Select model...</span>
           )}

@@ -43,14 +43,16 @@ const Temporary = ({
 
 const getHandleCoordsByPosition = (
   node: InternalNode<Node>,
-  handlePosition: Position
+  handlePosition: Position,
+  handleId?: string | null
 ) => {
   // Choose the handle type based on position - Left is for target, Right is for source
   const handleType = handlePosition === Position.Left ? "target" : "source";
+  const handles = node.internals.handleBounds?.[handleType];
 
-  const handle = node.internals.handleBounds?.[handleType]?.find(
-    (h) => h.position === handlePosition
-  );
+  const handle = handleId
+    ? handles?.find((h) => h.id === handleId)
+    : handles?.find((h) => h.position === handlePosition);
 
   if (!handle) {
     return [0, 0] as const;
@@ -92,12 +94,14 @@ const getHandleCoordsByPosition = (
 
 const getEdgeParams = (
   source: InternalNode<Node>,
-  target: InternalNode<Node>
+  target: InternalNode<Node>,
+  sourceHandleId?: string | null,
+  targetHandleId?: string | null
 ) => {
   const sourcePos = Position.Right;
-  const [sx, sy] = getHandleCoordsByPosition(source, sourcePos);
+  const [sx, sy] = getHandleCoordsByPosition(source, sourcePos, sourceHandleId);
   const targetPos = Position.Left;
-  const [tx, ty] = getHandleCoordsByPosition(target, targetPos);
+  const [tx, ty] = getHandleCoordsByPosition(target, targetPos, targetHandleId);
 
   return {
     sourcePos,
@@ -109,15 +113,15 @@ const getEdgeParams = (
   };
 };
 
-const Animated = memo(function Animated({ id, source, target, markerEnd, style, data }: EdgeProps) {
+const Animated = memo(function Animated({ id, source, target, sourceHandleId, targetHandleId, markerEnd, style, data }: EdgeProps) {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   const [isHovered, setIsHovered] = useState(false);
 
   const edgeParams = useMemo(() => {
     if (!(sourceNode && targetNode)) return null;
-    return getEdgeParams(sourceNode, targetNode);
-  }, [sourceNode, targetNode]);
+    return getEdgeParams(sourceNode, targetNode, sourceHandleId, targetHandleId);
+  }, [sourceNode, targetNode, sourceHandleId, targetHandleId]);
 
   const edgePath = useMemo(() => {
     if (!edgeParams) return "";
@@ -157,15 +161,15 @@ const Animated = memo(function Animated({ id, source, target, markerEnd, style, 
   );
 });
 
-const SmoothStep = memo(function SmoothStep({ id, source, target, markerEnd, style, data }: EdgeProps) {
+const SmoothStep = memo(function SmoothStep({ id, source, target, sourceHandleId, targetHandleId, markerEnd, style, data }: EdgeProps) {
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   const [isHovered, setIsHovered] = useState(false);
 
   const edgeParams = useMemo(() => {
     if (!(sourceNode && targetNode)) return null;
-    return getEdgeParams(sourceNode, targetNode);
-  }, [sourceNode, targetNode]);
+    return getEdgeParams(sourceNode, targetNode, sourceHandleId, targetHandleId);
+  }, [sourceNode, targetNode, sourceHandleId, targetHandleId]);
 
   const edgePath = useMemo(() => {
     if (!edgeParams) return "";

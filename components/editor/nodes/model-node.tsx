@@ -27,7 +27,7 @@ function ModelNodeComponentInner({
 
   return (
     <Node
-      handles={{ target: true, source: true }}
+      handles={{ target: false, source: true }}
       selected={selected}
       accentColor={NODE_COLORS.model.accent}
     >

@@ -1,6 +1,6 @@
 "use client";
 
-import type { AppNode, FileAttachment, DocumentNodeData, AgentNodeData, ModelNodeData } from "@/lib/flow/types";
+import type { AppNode, FileAttachment, DocumentNodeData, AgentNodeData, ModelNodeData, LLMNodeData, TextOutputNodeData } from "@/lib/flow/types";
 import { NODE_COLORS, type NodeColorKey } from "@/lib/flow/node-colors";
 
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useReactFlow, useOnSelectionChange } from "@xyflow/react";
+import type { TextInputNodeData } from "@/lib/flow/types";
+import { useReactFlow, useOnSelectionChange, useNodesData } from "@xyflow/react";
 import {
   Bot,
   Brain,
   CheckCircle2,
   FileOutput,
   FileText,
+  Sparkles,
   Type,
   X,
   Upload,
@@ -25,6 +27,7 @@ import {
 } from "lucide-react";
 import { useCallback, useState, useRef } from "react";
 import { ModelSelectorDialog } from "@/components/editor/model-selector-dialog";
+import { MessageResponse } from "@/components/ai-elements/message";
 import { nanoid } from "nanoid";
 
 const nodeIcons: Record<string, typeof Type> = {
@@ -33,6 +36,7 @@ const nodeIcons: Record<string, typeof Type> = {
   model: Brain,
   document: FileText,
   agent: Bot,
+  llm: Sparkles,
 };
 
 const nodelabels: Record<string, string> = {
@@ -41,6 +45,7 @@ const nodelabels: Record<string, string> = {
   model: "Model Properties",
   document: "Document Properties",
   agent: "Agent Properties",
+  llm: "LLM Properties",
 };
 
 function formatFileSize(bytes: number): string {
@@ -57,24 +62,173 @@ function getFileIcon(mediaType: string) {
   return File;
 }
 
+function LLMConfigSection({
+  selectedNode,
+  updateNodeData,
+}: {
+  selectedNode: AppNode;
+  updateNodeData: (id: string, data: Record<string, unknown>) => void;
+}) {
+  const { getEdges, getNodes } = useReactFlow();
+
+  // Use live reactive data from the store so edits propagate immediately
+  const liveNodeData = useNodesData(selectedNode.id);
+  const llmData = (liveNodeData?.data ?? selectedNode.data) as LLMNodeData;
+
+  // Resolve connected Model and TextInput nodes
+  const edges = getEdges();
+  const nodes = getNodes();
+  const incomingEdges = edges.filter((e) => e.target === selectedNode.id);
+
+  const connectedModelNodeId = (() => {
+    for (const edge of incomingEdges) {
+      if (edge.targetHandle === "llm-model" || !edge.targetHandle) {
+        const src = nodes.find((n) => n.id === edge.source);
+        if (src?.type === "model") return src.id;
+      }
+    }
+    return null;
+  })();
+
+  const connectedPromptNodeId = (() => {
+    for (const edge of incomingEdges) {
+      if (edge.targetHandle === "llm-prompt" || !edge.targetHandle) {
+        const src = nodes.find((n) => n.id === edge.source);
+        if (src?.type === "textInput") return src.id;
+      }
+    }
+    return null;
+  })();
+
+  // Live reactive data for connected nodes
+  const liveModelData = useNodesData(connectedModelNodeId ?? "");
+  const livePromptData = useNodesData(connectedPromptNodeId ?? "");
+
+  const hasModelConnection = !!connectedModelNodeId;
+  const modelData = hasModelConnection
+    ? (liveModelData?.data as ModelNodeData | undefined)
+    : undefined;
+  const promptData = connectedPromptNodeId
+    ? (livePromptData?.data as TextInputNodeData | undefined)
+    : undefined;
+
+  // Resolved values: prefer connected Model node, fall back to LLM node's own
+  const resolvedModelId = hasModelConnection && modelData ? modelData.modelId : llmData.modelId;
+  const resolvedTemperature = hasModelConnection && modelData ? modelData.temperature : llmData.temperature;
+  const resolvedMaxTokens = hasModelConnection && modelData ? modelData.maxTokens : llmData.maxTokens;
+
+  // Two-way binding: write to the connected Model node when present, otherwise to self
+  const targetNodeId = hasModelConnection ? connectedModelNodeId! : selectedNode.id;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-muted-foreground">
+          System Prompt
+        </label>
+        <Textarea
+          value={llmData.systemPrompt || ""}
+          onChange={(e) =>
+            updateNodeData(selectedNode.id, { systemPrompt: e.target.value })
+          }
+          className="min-h-20 resize-none text-sm"
+          placeholder="You are a helpful assistant..."
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-muted-foreground">
+          Model
+          {hasModelConnection && (
+            <span className="ml-1 text-[10px] text-emerald-600">(bound)</span>
+          )}
+        </label>
+        <ModelSelectorDialog
+          value={resolvedModelId || ""}
+          onSelect={(modelId) => updateNodeData(targetNodeId, { modelId })}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-muted-foreground">
+          Temperature
+          {hasModelConnection && (
+            <span className="ml-1 text-[10px] text-emerald-600">(bound)</span>
+          )}
+        </label>
+        <Input
+          type="number"
+          min={0}
+          max={2}
+          step={0.1}
+          value={resolvedTemperature ?? 0.7}
+          onChange={(e) =>
+            updateNodeData(targetNodeId, { temperature: parseFloat(e.target.value) || 0 })
+          }
+          className="h-8 text-sm"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-muted-foreground">
+          Max Tokens
+          {hasModelConnection && (
+            <span className="ml-1 text-[10px] text-emerald-600">(bound)</span>
+          )}
+        </label>
+        <Input
+          type="number"
+          min={1}
+          max={128000}
+          step={256}
+          value={resolvedMaxTokens ?? 1024}
+          onChange={(e) =>
+            updateNodeData(targetNodeId, { maxTokens: parseInt(e.target.value) || 1024 })
+          }
+          className="h-8 text-sm"
+        />
+      </div>
+
+      {promptData && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Prompt <span className="text-[10px] text-emerald-600">(bound)</span>
+          </label>
+          <div className="max-h-32 overflow-y-auto rounded border bg-muted/30 p-2">
+            <p className="whitespace-pre-wrap text-xs text-muted-foreground">
+              {promptData.text || <span className="italic">Empty</span>}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ConfigPanel() {
   const { updateNodeData, setNodes } = useReactFlow();
-  const [selectedNode, setSelectedNode] = useState<AppNode | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useOnSelectionChange({
     onChange: useCallback(({ nodes }: { nodes: AppNode[] }) => {
       if (nodes.length === 1) {
-        setSelectedNode(nodes[0]);
+        setSelectedNodeId(nodes[0].id);
       } else {
-        setSelectedNode(null);
+        setSelectedNodeId(null);
       }
     }, []),
   });
 
+  // Live reactive data from the store — updates whenever node data changes
+  const liveNodeData = useNodesData(selectedNodeId ?? "");
+  const selectedNode = selectedNodeId && liveNodeData
+    ? ({ id: selectedNodeId, type: liveNodeData.type, data: liveNodeData.data } as AppNode)
+    : null;
+
   const handleClose = useCallback(() => {
     setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
-    setSelectedNode(null);
+    setSelectedNodeId(null);
   }, [setNodes]);
 
   const handleFileUpload = useCallback(
@@ -143,13 +297,18 @@ export function ConfigPanel() {
     [selectedNode, updateNodeData]
   );
 
-  if (!selectedNode) return null;
-
-  const Icon = nodeIcons[selectedNode.type!] ?? Type;
-  const typelabel = nodelabels[selectedNode.type!] ?? "Properties";
+  const isOpen = !!selectedNode;
+  const Icon = selectedNode ? (nodeIcons[selectedNode.type!] ?? Type) : Type;
+  const typelabel = selectedNode ? (nodelabels[selectedNode.type!] ?? "Properties") : "";
 
   return (
-    <div className="flex w-72 flex-col border-l bg-card">
+    <div
+      className={`absolute top-0 right-0 z-20 flex h-full w-72 flex-col border-l bg-card shadow-lg transition-transform duration-200 ease-in-out ${
+        isOpen ? "translate-x-0" : "translate-x-full"
+      }`}
+    >
+      {!selectedNode ? null : (<>
+    <div className="flex w-full flex-col">
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <span
@@ -203,16 +362,52 @@ export function ConfigPanel() {
         )}
 
         {selectedNode.type === "model" && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
-              Model
-            </label>
-            <ModelSelectorDialog
-              value={(selectedNode.data as ModelNodeData).modelId || ""}
-              onSelect={(modelId) =>
-                updateNodeData(selectedNode.id, { modelId })
-              }
-            />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Model
+              </label>
+              <ModelSelectorDialog
+                value={(selectedNode.data as ModelNodeData).modelId || ""}
+                onSelect={(modelId) =>
+                  updateNodeData(selectedNode.id, { modelId })
+                }
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Temperature
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={2}
+                step={0.1}
+                value={(selectedNode.data as ModelNodeData).temperature ?? 0.7}
+                onChange={(e) =>
+                  updateNodeData(selectedNode.id, { temperature: parseFloat(e.target.value) || 0 })
+                }
+                className="h-8 text-sm"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Max Tokens
+              </label>
+              <Input
+                type="number"
+                min={1}
+                max={128000}
+                step={256}
+                value={(selectedNode.data as ModelNodeData).maxTokens ?? 1024}
+                onChange={(e) =>
+                  updateNodeData(selectedNode.id, { maxTokens: parseInt(e.target.value) || 1024 })
+                }
+                className="h-8 text-sm"
+              />
+            </div>
           </div>
         )}
 
@@ -323,6 +518,26 @@ export function ConfigPanel() {
             </div>
           </div>
         )}
+
+        {selectedNode.type === "llm" && (
+          <LLMConfigSection
+            selectedNode={selectedNode}
+            updateNodeData={updateNodeData}
+          />
+        )}
+
+        {selectedNode.type === "textOutput" && (selectedNode.data as TextOutputNodeData).text && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Output
+            </label>
+            <div className="max-h-64 overflow-y-auto rounded border bg-muted/30 p-3">
+              <MessageResponse className="text-xs">
+                {(selectedNode.data as TextOutputNodeData).text}
+              </MessageResponse>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-auto border-t px-4 py-2">
@@ -330,6 +545,8 @@ export function ConfigPanel() {
           ID: {selectedNode.id}
         </span>
       </div>
+    </div>
+      </>)}
     </div>
   );
 }
